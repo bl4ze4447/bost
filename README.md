@@ -1,15 +1,15 @@
-# Codename-TGV, a fun project ![C](https://img.shields.io/badge/Language-CPP-blue) ![NASM](https://img.shields.io/badge/Assembler-NASM-blue) 
+# bost, a minimal operating system ![C](https://img.shields.io/badge/Language-CPP-blue) ![NASM](https://img.shields.io/badge/Assembler-NASM-blue) 
 
-Codename-TGV, x86 Operating System, built upon:
-* Codename-TGV-Bootloader - Fast and ligtweight bootloader, built using NASM. Its size is only 0.001024 megabytes or 1024 bytes.
-* Codename-TGV-Kernel - Minimal and readable, built using C++.
+bost, x86 Operating System, built upon:
+* bost-boot - Fast and ligtweight bootloader, built in Assembly. The bootloader prepares the hardware and switches to the kernel in under 1024 bytes. For reference, an 1920x1080 png picture uses 2MB. The entire bootloader is smaller than the picture by ~1950 times.
+* bost-kernel - Minimal, with focus on code readability and scalability.
 
 ![Preview](https://i.imgur.com/vzqv07I.png)
 
 ## Build and usage
 ```make run``` will build the image and run it using qemu-system-i386.
 ## Dependencies
-* needs an i386 cross-compiler (this project uses gcc)
+* gcc i386 cross-compiler
 * nasm compiler
 * linker
 
@@ -23,14 +23,13 @@ Codename-TGV, x86 Operating System, built upon:
 * [osdever](http://www.osdever.net/FreeVGA/vga/portidx.htm)
 * [ctyme/intr/](https://www.ctyme.com/intr/) ; rb-1338,1337,1336
 
-## Bootloader error semnification
-Errors that happen in the bootloader follow this format: ```bER{error number}``` (example: ```bER20```)
-This format is used to save space.
+## bost-boot error format
+Errors will be printed on the screen with the following format: ```bER{error number}``` 
+(example: ```bER20```)
 | Error Number   | Description |
 | :----------:   | :---------- |
-| 1              | Either the sector load function failed or it did not read all sectors |
-| 20             | A20 Line could not be enabled |
-
+| 1              | Sector load func failed/did not read all sectors |
+| 20             | Could not open A20 Line |
 
 ## License
 This repository is licensed under the ```MIT License```.
