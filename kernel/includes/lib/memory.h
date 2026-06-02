@@ -3,6 +3,6 @@
 
 #include "lib/fxsint.h"
 
-void memcpy(void *dst, void *src, uint32_t bytes); 
+extern "C" void memcpy(void *dst, void *src, uint32_t bytes);
 
 #endif 
