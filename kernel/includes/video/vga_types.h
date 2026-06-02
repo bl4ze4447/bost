@@ -42,6 +42,6 @@ namespace vga {
         kClearConsole,
         kResetConsole
     };
-}
+} // namespace vga
 
 #endif
