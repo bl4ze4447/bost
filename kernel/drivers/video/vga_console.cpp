@@ -1,58 +1,49 @@
 // TODO: Check the screen type
 
 #include "video/vga_console.h"
-#include "video/vga_types.h"
 #include "port/io.h"
+#include "video/vga_types.h"
 
-VGAConsole& VGAConsole::operator<<(const char character) 
-{
+VGAConsole& VGAConsole::operator<<(char character) {
     PrintChar(character);
     return *this;
 }
 
-VGAConsole& VGAConsole::operator<<(const char* string) 
-{
-    for (; *string != '\0'; ++string) { PrintChar_NoCursorUpdate(*string); }
-
+VGAConsole& VGAConsole::operator<<(const char* string) {
+    for (; *string != '\0'; ++string) {
+        PrintCharNoCursorUpdate(*string);
+    }
     CursorUpdate();
     return *this;
 }
 
-VGAConsole& VGAConsole::operator<<(const vga::Action action) 
-{
+VGAConsole& VGAConsole::operator<<(vga::Action action) {
     switch (action) {
-        case vga::Action::kResetConsole: 
-        {
+        case vga::Action::kResetConsole: {
             VGAConsole tmp;
             *this = tmp;
             break;
         }
-        case vga::Action::kClearConsole:
-        {
-            uint8_t row{0}, col{0};
+
+        case vga::Action::kClearConsole: {
+            uint8_t row{0};
             uint16_t attribute{MakeAttribute(' ')};
-            for (; row < kMaxRows; ++row) 
-            {
-                for (col = 0; col < kMaxColumns; ++col) 
-                {
+            for (; row < kMaxRows; ++row) {
+                for (uint8_t col = 0; col < kMaxColumns; ++col) {
                     kVgaMemory[(row * kMaxColumns) + col] = attribute;
                 }
             }
-
             row_ = 0;
             col_ = 0;
             CursorUpdate();
             break;
         }
     }
-
     return *this;
 }
 
-VGAConsole& VGAConsole::operator<<(const vga::Color color) 
-{
-    if (color < vga::Color::kBgBlack) 
-    {
+VGAConsole& VGAConsole::operator<<(vga::Color color) {
+    if (color < vga::Color::kBgBlack) {
         fg_ = color;
         return *this;
     }
@@ -61,8 +52,7 @@ VGAConsole& VGAConsole::operator<<(const vga::Color color)
     return *this;
 }
 
-VGAConsole& VGAConsole::operator=(const VGAConsole& other) 
-{
+VGAConsole& VGAConsole::operator=(const VGAConsole& other) {
     row_ = other.row_;
     col_ = other.col_;
     bg_ = other.bg_;
@@ -70,42 +60,30 @@ VGAConsole& VGAConsole::operator=(const VGAConsole& other)
     return *this;
 }
 
-vga::Color VGAConsole::GetBackground() const
-{
+vga::Color VGAConsole::GetBackground() const {
     return bg_;
 }
 
-vga::Color VGAConsole::GetForeground() const
-{
+vga::Color VGAConsole::GetForeground() const {
     return fg_;
 }
 
-uint16_t VGAConsole::MakeAttribute(const char character) const
-{
-    // 0000 0000 0000 0000
-    // bgbg fgfg cccc cccc
-    return character | ((static_cast<uint8_t>(fg_) | (static_cast<uint8_t>(bg_) << 4)) << 8);
+uint16_t VGAConsole::MakeAttribute(char character) const {
+    return character |
+           ((static_cast<uint8_t>(fg_) | (static_cast<uint8_t>(bg_) << 4)) << 8);
 }
 
-void VGAConsole::Scroll(const uint8_t rows) 
-{
+void VGAConsole::Scroll(uint8_t rows) {
     uint8_t row{0};
-    for (; row < kMaxRows - rows; ++row) 
-    {
-        memcpy
-        (
-            &kVgaMemory[row * kMaxColumns], 
-            &kVgaMemory[(row+rows) * kMaxColumns], 
-            kMaxColumns
-        );
+    for (; row < kMaxRows - rows; ++row) {
+        memcpy(&kVgaMemory[row * kMaxColumns],
+               &kVgaMemory[(row + rows) * kMaxColumns],
+               kMaxColumns * sizeof(uint16_t));
     }
 
-    uint16_t col{0};
     uint16_t attribute{MakeAttribute(' ')};
-    for (; row < kMaxRows; ++row) 
-    {
-        for (col = 0; col < kMaxColumns; ++col) 
-        {
+    for (; row < kMaxRows; ++row) {
+        for (uint8_t col = 0; col < kMaxColumns; ++col) {
             kVgaMemory[(row * kMaxColumns) + col] = attribute;
         }
     }
@@ -114,8 +92,7 @@ void VGAConsole::Scroll(const uint8_t rows)
     CursorUpdate();
 }
 
-void VGAConsole::CursorUpdate() 
-{
+void VGAConsole::CursorUpdate() {
     uint16_t offset{static_cast<uint16_t>(row_ * kMaxColumns + col_)};
     uint8_t crtc_address{riob(kCrtcCtrlAddrReg)};
 
@@ -126,35 +103,60 @@ void VGAConsole::CursorUpdate()
     wiob(kCrtcCtrlAddrReg, crtc_address);
 }
 
-void VGAConsole::PrintChar_NoCursorUpdate(const char character) 
-{
-    bool new_line{false};
-    if (character == '\n' || character == 13) // 13 = carriage return
-    {
-        new_line = true;
-        goto update_rows;
+void VGAConsole::PrintUnsigned(uint64_t number) {
+    if (number == 0) {
+        PrintCharNoCursorUpdate('0');
+        return;
     }
 
-    if (col_ >= kMaxColumns) { goto update_rows; }
+    char buffer[21];
+    int i = 20;
+    buffer[i] = '\0';
 
-    kVgaMemory[(row_ * kMaxColumns) + col_] = MakeAttribute(character);
-    ++col_;
+    while (number > 0) {
+        buffer[--i] = '0' + (number % 10);
+        number /= 10;
+    }
 
-    return;
+    for (int j = i; buffer[j] != '\0'; ++j) {
+        PrintCharNoCursorUpdate(buffer[j]);
+    }
+}
 
-update_rows:
-    ++row_;
-    col_ = 0;
+void VGAConsole::PrintSigned(int64_t number) {
+    if (number < 0) {
+        PrintCharNoCursorUpdate('-');
+        if (number == -9223372036854775807LL - 1LL) {
+            PrintUnsigned(9223372036854775808ULL);
+            return;
+        }
+        PrintUnsigned(static_cast<uint64_t>(-number));
+    } else {
+        PrintUnsigned(static_cast<uint64_t>(number));
+    }
+}
 
-    if (row_ >= kMaxRows) { Scroll(row_ - kMaxRows + 1); }
-    if (new_line) { return; }
+void VGAConsole::PrintCharNoCursorUpdate(char character) {
+    bool new_line = (character == '\n' || character == 13);
+
+    if (new_line || col_ >= kMaxColumns) {
+        ++row_;
+        col_ = 0;
+
+        if (row_ >= kMaxRows) {
+            Scroll(row_ - kMaxRows + 1);
+        }
+
+        if (new_line) {
+            return;
+        }
+    }
 
     kVgaMemory[(row_ * kMaxColumns) + col_] = MakeAttribute(character);
     ++col_;
 }
 
-void VGAConsole::PrintChar(const char character) 
-{
-    PrintChar_NoCursorUpdate(character);
+void VGAConsole::PrintChar(char character) {
+    PrintCharNoCursorUpdate(character);
     CursorUpdate();
-} 
+}
