@@ -1,5 +1,7 @@
 [bits 32]
-[extern main]
+global kernel_entry
 
-call main
+kernel_entry:
+    [extern kmain]
+    call kmain
 jmp $
