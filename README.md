@@ -4,7 +4,8 @@ bost, x86 Operating System, built upon:
 * bost-boot - Fast and ligtweight bootloader, built in Assembly. The bootloader prepares the hardware and switches to the kernel in under 1024 bytes. For reference, an 1920x1080 png picture uses 2MB. The entire bootloader is smaller than the picture by ~1950 times.
 * bost-kernel - Minimal, with focus on code readability and scalability.
 
-![Preview](https://i.imgur.com/vzqv07I.png)
+![Preview](https://github.com/user-attachments/assets/76e4205c-0d23-4fac-a7d8-2e6a80c71ef5)
+
 
 ## Build and usage
 ```make run``` will build the image and run it using qemu-system-i386.
