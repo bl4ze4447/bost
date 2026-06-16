@@ -34,10 +34,9 @@ CPPFLAGS    += -std=c++23
 CPPFLAGS    += -Os
 CPPFLAGS    += -I$(INCLUDES_PATH)
 
-# Identifică automat calea către componentele matematice de 32-bit din libgcc
 LIBGCC = $(shell $(CC) $(CPPFLAGS) -print-libgcc-file-name)
 
-# LD Flags (Adăugat explicit punctul de pornire pentru a șterge warning-ul)
+# LD Flags
 LDFLAGS_BIN += -m elf_i386 -e kernel_entry
 LDFLAGS_O   += -Ttext 0x1000
 LDFLAGS_O   += --oformat binary
